@@ -6,6 +6,7 @@ known Teff and logg. There are other routines included for calculting
 gravitational redshifts.
 
 # Dependencies:
+* Python >= 3.6
 * numpy
 * scipy
 * astropy
