@@ -40,8 +40,8 @@ def logg_from_M_R(M, R):
   """
   Input mass (Msun) and radius (Rsun) to get the WD logg (cm s-2 dex).
   """
-  M *= u.Msun
-  R *= u.Rsun
+  M <<= u.Msun
+  R <<= u.Rsun
   g = G*M/R**2
   return np.log10(g.to(u.cm/u.s**2).value)
 
@@ -50,7 +50,7 @@ def M_from_logg_R(logg, R):
   Input logg (cm s-2 dex) and radius (Rsun) to get the WD mass (Msun).
   """
   g = 10**logg * u.cm/u.s**2
-  R *= u.Rsun
+  R <<= u.Rsun
   M = g*R**2/G
   return M.to(u.Msun).value
 
@@ -59,7 +59,7 @@ def R_from_M_logg(M, logg):
   Input mass (Msun) and logg (cm s-2 dex) to get the WD radius (Rsun).
   """
   g = 10**logg * u.cm/u.s**2
-  M *= u.Msun
+  M <<= u.Msun
   R = np.sqrt(G*M/g)
   return R.to(u.Rsun).value
 
@@ -175,8 +175,8 @@ def Grv_from_M_R(M, R):
   """
   Input mass (Msun) and radius (Rsun) to get the WD Grv (km/s).
   """
-  M *= u.Msun
-  R *= u.Rsun
+  M <<= u.Msun
+  R <<= u.Rsun
   rv = G*M/(c*R) 
   return rv.to(u.km/u.s).value
 
