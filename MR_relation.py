@@ -34,13 +34,16 @@ __all__ = [
     "Grv_from_M_R",
 ]
 
-t_opt = "thin", "thick"
-mr_dir = os.path.dirname(os.path.abspath(__file__))
-f_grids = {t : f"{mr_dir}/MR_grids/CO_{t}H_processed.csv" for t in t_opt}
-GRIDS = {t : pd.read_csv(f_grids[t]) for t in t_opt}
-for t in t_opt:
-    GRID = GRIDS[t]
-    GRID['logM'] = np.log10(GRID['Mass'])
+def set_models(models):
+    t_opt = "thin", "thick"
+    mr_dir = os.path.dirname(os.path.abspath(__file__))
+    f_grids = {t : f"{mr_dir}/MR_grids/{models}_{t}.csv" for t in t_opt}
+    GRIDS = {t : pd.read_csv(f_grids[t]) for t in t_opt}
+    for t in t_opt:
+        GRID = GRIDS[t]
+        GRID['logM'] = np.log10(GRID['Mass'])
+    return GRIDS
+GRIDS = set_models('Bedard20')
 
 def logg_from_M_R(M, R):
     """
