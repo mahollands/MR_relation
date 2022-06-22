@@ -29,9 +29,6 @@ __all__ = [
     "R_from_Teff_L",
     "M_from_Teff_L",
     "Teff_from_R_L":
-    "Teff_from_logg_L",
-    "R_from_logg_L",
-    "M_from_logg_L",
     "Grv_from_M_R",
 ]
 
@@ -212,34 +209,6 @@ def Teff_from_R_L(R, L):
     L *= u.Lsun
     T4 = L / (4*np.pi * sigma_sb * R**2)
     return (T4**(1/4)).to(u.K).value
-
-def Teff_from_logg_L(logg, L, thickness):
-    """
-    Input logg (cm s-2 dex) and luminosity (Lsun) to get the WD Teff (K).
-    Thickness should be one of 'thin'/'thick'.
-    """
-    GRID = GRIDS[thickness]
-    logL = np.log10(L)
-    logT = griddata((GRID['logg'], GRID['logL']), GRID['logT'], (logg, logL))
-    return 10**logT
-
-def R_from_logg_L(logg, L, thickness):
-    """
-    Input logg (cm s-2 dex) and luminosity (Lsun) to get the WD radius (Lsun).
-    Thickness should be one of 'thin'/'thick'.
-    """
-    GRID = GRIDS[thickness]
-    logL = np.log10(L)
-    logR = griddata((GRID['logg'], GRID['logL']), GRID['logR'], (logg, logL))
-    return 10**logR
-
-def M_from_logg_L(logg, L, thickness):
-    """
-    Input logg (cm s-2 dex) and luminosity (Lsun) to get the WD mass (Msun).
-    Thickness should be one of 'thin'/'thick'.
-    """
-    R = R_from_logg_L(logg, L, thickness)
-    return M_from_logg_R(logg, R)
 
 def Grv_from_M_R(M, R):
     """
