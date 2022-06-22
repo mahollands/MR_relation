@@ -28,7 +28,7 @@ __all__ = [
     "logg_from_Teff_L",
     "R_from_Teff_L",
     "M_from_Teff_L",
-    "Teff_from_R_L":
+    "Teff_from_R_L",
     "Grv_from_M_R",
 ]
 
