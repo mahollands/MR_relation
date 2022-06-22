@@ -28,6 +28,7 @@ __all__ = [
     "logg_from_Teff_L",
     "R_from_Teff_L",
     "M_from_Teff_L",
+    "Teff_from_R_L":
     "Teff_from_logg_L",
     "R_from_logg_L",
     "M_from_logg_L",
@@ -202,6 +203,15 @@ def M_from_Teff_L(Teff, L, thickness):
     """
     R = R_from_Teff_L(Teff, L)
     return M_from_Teff_R(Teff, R, thickness)
+
+def Teff_from_R_L(R, L):
+    """
+    Input R (Rsun) and luminosity (Lsun) to get the WD Teff (K).
+    """
+    R *= u.Rsun
+    L *= u.Lsun
+    T4 = L / (4*np.pi * sigma_sb * R**2)
+    return (T4**(1/4)).to(u.K).value
 
 def Teff_from_logg_L(logg, L, thickness):
     """
