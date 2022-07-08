@@ -22,6 +22,7 @@ __all__ = [
     "tau_from_Teff_R",
     "tau_from_Teff_logg",
     "tau_from_Teff_M",
+    "Teff_from_tau_M",
     "L_from_Teff_R",
     "L_from_Teff_logg",
     "L_from_Teff_M",
@@ -150,6 +151,18 @@ def tau_from_Teff_M(Teff, M, thickness):
     """
     R = R_from_Teff_M(Teff, M, thickness)
     return tau_from_Teff_R(Teff, R, thickness)
+
+def Teff_from_tau_M(tau, M, thickness):
+    """
+    Input tau (Gyr) and mass (Msun) to get the Teff [K].
+    Thickness should be one of 'thin'/'thick'.
+    Useful for simulation work.
+    """
+    GRID = GRIDS[thickness]
+    logtau = np.log10(tau) + 9
+    logM = np.log10(M)
+    logT = griddata((GRID['logtau'], GRID['logM']), GRID['logT'], (logtau, logM))
+    return 10**logT
 
 def L_from_Teff_R(Teff, R):
     """
