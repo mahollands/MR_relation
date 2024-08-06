@@ -56,30 +56,32 @@ def set_models(models):
 GRIDS = set_models('Bedard20')
 
 def units_handling(x_kind, y_kind, z_kind):
+    """
+    Wraps a routine for interpolating z(x, y). If inputs x or y are astropy
+    quantities then the output z is also an astropy quantity. If x or y are
+    both scalars, then z is returned as a scalar assuming sensible default
+    options for their units.
+    """
+    units = [default_units[kind] for kind in (x_kind, y_kind, z_kind)]
+    x_unit, y_unit, z_unit = units
     def _decorator(func):
         @wraps(func)
         def _wrapper(x, y, *args, **kwargs):
-            return_with_units = False
-            if hasattr(x, 'unit'):
-                x = x.to(default_units[x_kind])
-                return_with_units = True
-            else:
-                x <<= default_units[x_kind]
-            if hasattr(y, 'unit'):
-                y = y.to(default_units[y_kind])
-                return_with_units = True
-            else:
-                y <<= default_units[y_kind]
-
-            z = func(x, y, *args, **kwargs).to(default_units[z_kind])
-            return z if return_with_units else z.value
+            has_x_unit, has_y_unit = hasattr(x, 'unit'), hasattr(y, 'unit')
+            x = x.to(x_unit) if has_x_unit else x << x_unit
+            y = y.to(y_unit) if has_y_unit else y << y_unit
+            z = func(x, y, *args, **kwargs).to(z_unit)
+            return z if has_x_unit or has_y_unit else z.value
         return _wrapper
     return _decorator
+
+#######################################
+# M, R, logg conversions
 
 @units_handling(x_kind='Mass', y_kind='Radius', z_kind='logg')
 def logg_from_M_R(M, R):
     """
-    Input mass (Msun) and radius (Rsun) to get the WD logg (cm s-2 dex).
+    Input mass and radius to get the WD logg.
     """
     g = G*M/R**2
     return g
@@ -87,7 +89,7 @@ def logg_from_M_R(M, R):
 @units_handling(x_kind='logg', y_kind='Radius', z_kind='Mass')
 def M_from_logg_R(logg, R):
     """
-    Input logg (cm s-2 dex) and radius (Rsun) to get the WD mass (Msun).
+    Input logg and radius to get the WD mass.
     """
     g = logg.physical
     M = g*R**2/G
@@ -96,28 +98,30 @@ def M_from_logg_R(logg, R):
 @units_handling(x_kind='Mass', y_kind='logg', z_kind='Radius')
 def R_from_M_logg(M, logg):
     """
-    Input mass (Msun) and logg (cm s-2 dex) to get the WD radius (Rsun).
+    Input mass and logg to get the WD radius.
     """
     g = logg.physical
     R = np.sqrt(G*M/g)
     return R
 
+#######################################
+# M, R, logg, Teff conversions
+
 @units_handling(x_kind='Teff', y_kind='Radius', z_kind='logg')
 def logg_from_Teff_R(Teff, R, thickness):
     """
-    Input Teff (K) and radius (Rsun) to get the WD logg (cm s-2 dex).
+    Input Teff and radius to get the WD logg.
     Thickness should be one of 'thin'/'thick'.
     """
     GRID = GRIDS[thickness]
-    logT = np.log10(Teff.value)
-    logR = np.log10(R.value)
-    logg = griddata((GRID['logT'], GRID['logR']), GRID['logg'], (logT, logR))
-    return logg * u.dex(u.cm/u.s**2)
+    xyi = np.log10(Teff.value), np.log10(R.value)
+    logg = griddata((GRID['logT'], GRID['logR']), GRID['logg'], xyi)
+    return logg << default_units['logg']
 
 @units_handling(x_kind='Teff', y_kind='Radius', z_kind='Mass')
 def M_from_Teff_R(Teff, R, thickness):
     """
-    Input Teff (K) and radius (Rsun) to get the WD mass (Msun).
+    Input Teff and radius to get the WD mass.
     Thickness should be one of 'thin'/'thick'.
     """
     logg = logg_from_Teff_R(Teff, R, thickness)
@@ -126,18 +130,18 @@ def M_from_Teff_R(Teff, R, thickness):
 @units_handling(x_kind='Teff', y_kind='logg', z_kind='Radius')
 def R_from_Teff_logg(Teff, logg, thickness):
     """
-    Input Teff (K) and logg (c ms-2 dex) to get the WD radius (Rsun).
+    Input Teff and logg to get the WD radius.
     Thickness should be one of 'thin'/'thick'.
     """
     GRID = GRIDS[thickness]
     xyi = np.log10(Teff.value), logg.value
     logR = griddata((GRID['logT'], GRID['logg']), GRID['logR'], xyi)
-    return 10**logR * u.Rsun
+    return 10**logR << default_units['Radius']
 
 @units_handling(x_kind='Teff', y_kind='logg', z_kind='Mass')
 def M_from_Teff_logg(Teff, logg, thickness):
     """
-    Input Teff (K) and logg (cms-2 dex) to get the WD mass (Msun).
+    Input Teff and logg to get the WD mass.
     Thickness should be one of 'thin'/'thick'.
     """
     R = R_from_Teff_logg(Teff, logg, thickness)
@@ -146,38 +150,41 @@ def M_from_Teff_logg(Teff, logg, thickness):
 @units_handling(x_kind='Teff', y_kind='Mass', z_kind='logg')
 def logg_from_Teff_M(Teff, M, thickness):
     """
-    Input Teff (K) and mass (Msun) to get the WD logg (cm s-2 dex).
+    Input Teff and mass to get the WD logg.
     Thickness should be one of 'thin'/'thick'.
     """
     GRID = GRIDS[thickness]
     xyi = np.log10(Teff.value), np.log10(M.value)
     logg = griddata((GRID['logT'], GRID['logM']), GRID['logg'], xyi)
-    return logg * u.dex(u.cm/u.s**2)
+    return logg << default_units['logg']
 
 @units_handling(x_kind='Teff', y_kind='Mass', z_kind='Radius')
 def R_from_Teff_M(Teff, M, thickness):
     """
-    Input Teff (K) and mass (Msun) to get the WD radius.
+    Input Teff and mass to get the WD radius.
     Thickness should be one of 'thin'/'thick'.
     """
     logg = logg_from_Teff_M(Teff, M, thickness)
     return R_from_M_logg(M, logg)
 
+#######################################
+# cooling age conversions
+
 @units_handling(x_kind='Teff', y_kind='Radius', z_kind='tau_cool')
 def tau_from_Teff_R(Teff, R, thickness):
     """
-    Input Teff (K) and radius (Rsun) to get the WD cooling age (Gyr).
+    Input Teff and radius to get the WD cooling age (Gyr).
     Thickness should be one of 'thin'/'thick'.
     """
     GRID = GRIDS[thickness]
     xyi = np.log10(Teff.value), np.log10(R.value)
     logtau = griddata((GRID['logT'], GRID['logR']), GRID['logtau'], xyi)
-    return 10**(logtau-9) * u.Gyr
+    return 10**(logtau-9) << default_units['tau_cool']
 
 @units_handling(x_kind='Teff', y_kind='logg', z_kind='tau_cool')
 def tau_from_Teff_logg(Teff, logg, thickness):
     """
-    Input Teff (K) and logg (cm s-2 dex) to get the WD cooling age (Gyr).
+    Input Teff and logg to get the WD cooling age.
     Thickness should be one of 'thin'/'thick'.
     """
     R = R_from_Teff_logg(Teff, logg, thickness)
@@ -186,7 +193,7 @@ def tau_from_Teff_logg(Teff, logg, thickness):
 @units_handling(x_kind='Teff', y_kind='Mass', z_kind='tau_cool')
 def tau_from_Teff_M(Teff, M, thickness):
     """
-    Input Teff (K) and mass (Msun) to get the WD cooling age (Gyr).
+    Input Teff  and mass to get the WD cooling age.
     Thickness should be one of 'thin'/'thick'.
     """
     R = R_from_Teff_M(Teff, M, thickness)
@@ -195,19 +202,22 @@ def tau_from_Teff_M(Teff, M, thickness):
 @units_handling(x_kind='tau_cool', y_kind='Mass', z_kind='Teff')
 def Teff_from_tau_M(tau, M, thickness):
     """
-    Input tau (Gyr) and mass (Msun) to get the Teff [K].
+    Input tau and mass to get the Teff.
     Thickness should be one of 'thin'/'thick'.
     Useful for simulation work.
     """
     GRID = GRIDS[thickness]
     xyi = np.log10(tau.value) + 9, np.log10(M.value)
-    logT = griddata((GRID['logtau'], GRID['logM']), GRID['logT'], (logtau, logM))
-    return 10**logT * u.K
+    logT = griddata((GRID['logtau'], GRID['logM']), GRID['logT'], xyi)
+    return 10**logT << default_units['Teff']
+
+#######################################
+# luminosity conversions
 
 @units_handling(x_kind='Teff', y_kind='Radius', z_kind='Luminosity')
 def L_from_Teff_R(Teff, R):
     """
-    Input Teff (K) and radius (Rsun) to get the WD luminosity (Lsun).
+    Input Teff and radius to get the WD luminosity.
     """
     L = 4*np.pi * sigma_sb * R**2 * Teff**4
     return L
@@ -215,7 +225,7 @@ def L_from_Teff_R(Teff, R):
 @units_handling(x_kind='Teff', y_kind='logg', z_kind='Luminosity')
 def L_from_Teff_logg(Teff, logg, thickness):
     """
-    Input Teff (K) and logg (cm s-2 dex) to get the WD luminosity (Lsun).
+    Input Teff and logg to get the WD luminosity.
     Thickness should be one of 'thin'/'thick'.
     """
     R = R_from_Teff_logg(Teff, logg, thickness)
@@ -224,7 +234,7 @@ def L_from_Teff_logg(Teff, logg, thickness):
 @units_handling(x_kind='Teff', y_kind='Mass', z_kind='Luminosity')
 def L_from_Teff_M(Teff, M, thickness):
     """
-    Input Teff (K) and mass (Msun) to get the WD luminosity (Lsun).
+    Input Teff and mass to get the WD luminosity.
     Thickness should be one of 'thin'/'thick'.
     """
     R = R_from_Teff_M(Teff, M, thickness)
@@ -233,7 +243,7 @@ def L_from_Teff_M(Teff, M, thickness):
 @units_handling(x_kind='Teff', y_kind='Luminosity', z_kind='Radius')
 def R_from_Teff_L(Teff, L):
     """
-    Input Teff (K) and luminosity (Lsun) to get the WD radius (Rsun).
+    Input Teff and luminosity to get the WD radius.
     """
     R2 = L / (4*np.pi * sigma_sb * Teff**4)
     return np.sqrt(R2)
@@ -250,7 +260,7 @@ def logg_from_Teff_L(Teff, L, thickness):
 @units_handling(x_kind='Teff', y_kind='Luminosity', z_kind='Mass')
 def M_from_Teff_L(Teff, L, thickness):
     """
-    Input Teff (K) and luminosity (Lsun) to get the WD mass (Msun).
+    Input Teff and luminosity to get the WD mass.
     Thickness should be one of 'thin'/'thick'.
     """
     R = R_from_Teff_L(Teff, L)
@@ -259,15 +269,18 @@ def M_from_Teff_L(Teff, L, thickness):
 @units_handling(x_kind='Radius', y_kind='Luminosity', z_kind='Teff')
 def Teff_from_R_L(R, L):
     """
-    Input R (Rsun) and luminosity (Lsun) to get the WD Teff (K).
+    Input R and luminosity to get the WD Teff.
     """
     T4 = L / (4*np.pi * sigma_sb * R**2)
     return T4**(1/4)
 
+#######################################
+# gravitational redshift
+
 @units_handling(x_kind='Mass', y_kind='Radius', z_kind='velocity')
 def Grv_from_M_R(M, R):
     """
-    Input mass (Msun) and radius (Rsun) to get the WD Grv (km/s).
+    Input mass and radius to get the WD Grv.
     """
     rv = G*M/(c*R)
     return rv
