@@ -11,7 +11,7 @@ returned without units. If either of the two interpolating arguments are input
 with units, the output is also returned with a unit attached.
 
 Examples:
-```
+```python
 #No units provided
 >>> R_from_Teff_M(15000, 0.6, 'thick')
 0.013157301496275331
