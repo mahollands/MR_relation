@@ -25,8 +25,14 @@ with units, the output is also returned with a unit attached.
 <Quantity 0.0131573 solRad>
 
 #Non default unit used on an argument
->>> R_from_Teff_M(15000*u.K, 1.2e30*u.kg, 'thick')
+>>> R_from_Teff_M(15000*u.K, 1.2E30*u.kg, 'thick')
 <Quantity 0.01310131 solRad>
+
+#Inputs can mix and match linear and log scales if units are provided
+>>> M_from_logg_R(1E8*u.cm/u.s**2, -1.9*u.dex(u.Rsun))
+<Quantity 0.57800603 solMass>
+>>> M_from_logg_R(9.81*u.m/u.s**2, 0*u.dex(u.Rearth)).to(u.Mearth)
+<Quantity 1.00118406 earthMass>
 ```
 
 # Dependencies:
