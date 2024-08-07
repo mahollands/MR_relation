@@ -1,6 +1,11 @@
 """
-Utilities for interpolating the MR-relations of Fontaine et al. 2001.
-Uses the CO_Hthick (mH=1e-4) and CO_Hthin (mH=1e-10) models.
+Utilities for interpolating white dwarf Mass-Radius relations
+and evolutionary models. The default models are from
+Bedard et al. (2020) (adsabs.harvard.edu/abs/2020ApJ...901...93B)
+using the CO_Hthick (mH=1e-4) and CO_Hthin (mH=1e-10) model grids.
+
+Generic routines are also provided for simple conversions,
+e.g. radius from mass and logg, luminosity from Teff and radius.
 """
 import os.path
 from functools import wraps
