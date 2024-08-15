@@ -67,8 +67,7 @@ def units_handling(x_kind, y_kind, z_kind):
     both scalars, then z is returned as a scalar assuming sensible default
     options for their units.
     """
-    units = [default_units[kind] for kind in (x_kind, y_kind, z_kind)]
-    x_unit, y_unit, z_unit = units
+    x_unit, y_unit, z_unit = map(default_units.get, (x_kind, y_kind, z_kind))
     def _decorator(func):
         @wraps(func)
         def _wrapper(x, y, *args, **kwargs):
