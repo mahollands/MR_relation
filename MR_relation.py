@@ -1,12 +1,3 @@
-"""
-Utilities for interpolating white dwarf Mass-Radius relations
-and evolutionary models. The default models are from
-Bedard et al. (2020) (adsabs.harvard.edu/abs/2020ApJ...901...93B)
-using the CO_Hthick (mH=1e-4) and CO_Hthin (mH=1e-10) model grids.
-
-Generic routines are also provided for simple conversions,
-e.g. radius from mass and logg, luminosity from Teff and radius.
-"""
 import os.path
 from functools import wraps
 import numpy as np
@@ -173,7 +164,7 @@ def R_from_Teff_M(Teff, M, thickness):
 @units_handling(x_kind='Teff', y_kind='Radius', z_kind='tau_cool')
 def tau_from_Teff_R(Teff, R, thickness):
     """
-    Input Teff and radius to get the WD cooling age (Gyr).
+    Input Teff and radius to get the WD cooling age.
     Thickness should be one of 'thin'/'thick'.
     """
     GRID = GRIDS[thickness]
@@ -249,7 +240,7 @@ def L_from_Teff_logg(Teff, logg, thickness):
 @units_handling(x_kind='Teff', y_kind='Luminosity', z_kind='logg')
 def logg_from_Teff_L(Teff, L, thickness):
     """
-    Input Teff (K) and luminosity (Lsun) to get the WD logg (cm s-2 dex).
+    Input Teff and luminosity to get the WD logg.
     Thickness should be one of 'thin'/'thick'.
     """
     R = R_from_Teff_L(Teff, L)
