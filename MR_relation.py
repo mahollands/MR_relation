@@ -86,14 +86,14 @@ def units_handling(x_kind, y_kind, z_kind):
 @units_handling(x_kind='Mass', y_kind='Radius', z_kind='logg')
 def logg_from_M_R(M, R):
     """
-    Input mass and radius to get the WD logg.
+    Input mass and radius to get the logg.
     """
     return G*M/R**2
 
 @units_handling(x_kind='logg', y_kind='Radius', z_kind='Mass')
 def M_from_logg_R(logg, R):
     """
-    Input logg and radius to get the WD mass.
+    Input logg and radius to get the mass.
     """
     g = logg.physical
     return g*R**2/G
@@ -101,13 +101,13 @@ def M_from_logg_R(logg, R):
 @units_handling(x_kind='Mass', y_kind='logg', z_kind='Radius')
 def R_from_M_logg(M, logg):
     """
-    Input mass and logg to get the WD radius.
+    Input mass and logg to get the radius.
     """
     g = logg.physical
     return np.sqrt(G*M/g)
 
 #######################################
-# M, R, logg, Teff conversions
+# Teff conversions
 
 @units_handling(x_kind='Teff', y_kind='Radius', z_kind='logg')
 def logg_from_Teff_R(Teff, R, thickness):
@@ -118,15 +118,6 @@ def logg_from_Teff_R(Teff, R, thickness):
     GRID = GRIDS[thickness]
     xyi = np.log10(Teff.value), np.log10(R.value)
     return griddata((GRID['logT'], GRID['logR']), GRID['logg'], xyi)
-
-@units_handling(x_kind='Teff', y_kind='Radius', z_kind='Mass')
-def M_from_Teff_R(Teff, R, thickness):
-    """
-    Input Teff and radius to get the WD mass.
-    Thickness should be one of 'thin'/'thick'.
-    """
-    logg = logg_from_Teff_R(Teff, R, thickness)
-    return M_from_logg_R(logg, R)
 
 @units_handling(x_kind='Teff', y_kind='logg', z_kind='Radius')
 def R_from_Teff_logg(Teff, logg, thickness):
@@ -157,6 +148,15 @@ def logg_from_Teff_M(Teff, M, thickness):
     GRID = GRIDS[thickness]
     xyi = np.log10(Teff.value), np.log10(M.value)
     return griddata((GRID['logT'], GRID['logM']), GRID['logg'], xyi)
+
+@units_handling(x_kind='Teff', y_kind='Radius', z_kind='Mass')
+def M_from_Teff_R(Teff, R, thickness):
+    """
+    Input Teff and radius to get the WD mass.
+    Thickness should be one of 'thin'/'thick'.
+    """
+    logg = logg_from_Teff_R(Teff, R, thickness)
+    return M_from_logg_R(logg, R)
 
 @units_handling(x_kind='Teff', y_kind='Mass', z_kind='Radius')
 def R_from_Teff_M(Teff, M, thickness):
@@ -217,9 +217,25 @@ def Teff_from_tau_M(tau, M, thickness):
 @units_handling(x_kind='Teff', y_kind='Radius', z_kind='Luminosity')
 def L_from_Teff_R(Teff, R):
     """
-    Input Teff and radius to get the WD luminosity.
+    Input Teff and radius to get the luminosity.
     """
     return 4*np.pi * sigma_sb * R**2 * Teff**4
+
+@units_handling(x_kind='Teff', y_kind='Luminosity', z_kind='Radius')
+def R_from_Teff_L(Teff, L):
+    """
+    Input Teff and luminosity to get the radius.
+    """
+    R2 = L / (4*np.pi * sigma_sb * Teff**4)
+    return np.sqrt(R2)
+
+@units_handling(x_kind='Radius', y_kind='Luminosity', z_kind='Teff')
+def Teff_from_R_L(R, L):
+    """
+    Input R and luminosity to get the Teff.
+    """
+    T4 = L / (4*np.pi * sigma_sb * R**2)
+    return T4**(1/4)
 
 @units_handling(x_kind='Teff', y_kind='logg', z_kind='Luminosity')
 def L_from_Teff_logg(Teff, logg, thickness):
@@ -230,23 +246,6 @@ def L_from_Teff_logg(Teff, logg, thickness):
     R = R_from_Teff_logg(Teff, logg, thickness)
     return L_from_Teff_R(Teff, R)
 
-@units_handling(x_kind='Teff', y_kind='Mass', z_kind='Luminosity')
-def L_from_Teff_M(Teff, M, thickness):
-    """
-    Input Teff and mass to get the WD luminosity.
-    Thickness should be one of 'thin'/'thick'.
-    """
-    R = R_from_Teff_M(Teff, M, thickness)
-    return L_from_Teff_R(Teff, R)
-
-@units_handling(x_kind='Teff', y_kind='Luminosity', z_kind='Radius')
-def R_from_Teff_L(Teff, L):
-    """
-    Input Teff and luminosity to get the WD radius.
-    """
-    R2 = L / (4*np.pi * sigma_sb * Teff**4)
-    return np.sqrt(R2)
-
 @units_handling(x_kind='Teff', y_kind='Luminosity', z_kind='logg')
 def logg_from_Teff_L(Teff, L, thickness):
     """
@@ -256,6 +255,15 @@ def logg_from_Teff_L(Teff, L, thickness):
     R = R_from_Teff_L(Teff, L)
     return logg_from_Teff_R(Teff, R, thickness)
 
+@units_handling(x_kind='Teff', y_kind='Mass', z_kind='Luminosity')
+def L_from_Teff_M(Teff, M, thickness):
+    """
+    Input Teff and mass to get the WD luminosity.
+    Thickness should be one of 'thin'/'thick'.
+    """
+    R = R_from_Teff_M(Teff, M, thickness)
+    return L_from_Teff_R(Teff, R)
+
 @units_handling(x_kind='Teff', y_kind='Luminosity', z_kind='Mass')
 def M_from_Teff_L(Teff, L, thickness):
     """
@@ -264,14 +272,6 @@ def M_from_Teff_L(Teff, L, thickness):
     """
     R = R_from_Teff_L(Teff, L)
     return M_from_Teff_R(Teff, R, thickness)
-
-@units_handling(x_kind='Radius', y_kind='Luminosity', z_kind='Teff')
-def Teff_from_R_L(R, L):
-    """
-    Input R and luminosity to get the WD Teff.
-    """
-    T4 = L / (4*np.pi * sigma_sb * R**2)
-    return T4**(1/4)
 
 #######################################
 # gravitational redshift
