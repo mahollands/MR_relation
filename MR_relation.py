@@ -74,7 +74,8 @@ def units_handling(x_kind, y_kind, z_kind):
             has_x_unit, has_y_unit = hasattr(x, 'unit'), hasattr(y, 'unit')
             x = x.to(x_unit) if has_x_unit else x << x_unit
             y = y.to(y_unit) if has_y_unit else y << y_unit
-            z = func(x, y, *args, **kwargs).to(z_unit)
+            z = func(x, y, *args, **kwargs)
+            z = z.to(z_unit) if hasattr(z, 'unit') else z << z_unit
             return z if has_x_unit or has_y_unit else z.value
         return _wrapper
     return _decorator
@@ -116,8 +117,7 @@ def logg_from_Teff_R(Teff, R, thickness):
     """
     GRID = GRIDS[thickness]
     xyi = np.log10(Teff.value), np.log10(R.value)
-    logg = griddata((GRID['logT'], GRID['logR']), GRID['logg'], xyi)
-    return logg << default_units['logg']
+    return griddata((GRID['logT'], GRID['logR']), GRID['logg'], xyi)
 
 @units_handling(x_kind='Teff', y_kind='Radius', z_kind='Mass')
 def M_from_Teff_R(Teff, R, thickness):
@@ -137,7 +137,7 @@ def R_from_Teff_logg(Teff, logg, thickness):
     GRID = GRIDS[thickness]
     xyi = np.log10(Teff.value), logg.value
     logR = griddata((GRID['logT'], GRID['logg']), GRID['logR'], xyi)
-    return 10**logR << default_units['Radius']
+    return 10**logR
 
 @units_handling(x_kind='Teff', y_kind='logg', z_kind='Mass')
 def M_from_Teff_logg(Teff, logg, thickness):
@@ -156,8 +156,7 @@ def logg_from_Teff_M(Teff, M, thickness):
     """
     GRID = GRIDS[thickness]
     xyi = np.log10(Teff.value), np.log10(M.value)
-    logg = griddata((GRID['logT'], GRID['logM']), GRID['logg'], xyi)
-    return logg << default_units['logg']
+    return griddata((GRID['logT'], GRID['logM']), GRID['logg'], xyi)
 
 @units_handling(x_kind='Teff', y_kind='Mass', z_kind='Radius')
 def R_from_Teff_M(Teff, M, thickness):
@@ -180,7 +179,7 @@ def tau_from_Teff_R(Teff, R, thickness):
     GRID = GRIDS[thickness]
     xyi = np.log10(Teff.value), np.log10(R.value)
     logtau = griddata((GRID['logT'], GRID['logR']), GRID['logtau'], xyi)
-    return 10**(logtau-9) << default_units['tau_cool']
+    return 10**(logtau-9)
 
 @units_handling(x_kind='Teff', y_kind='logg', z_kind='tau_cool')
 def tau_from_Teff_logg(Teff, logg, thickness):
@@ -210,7 +209,7 @@ def Teff_from_tau_M(tau, M, thickness):
     GRID = GRIDS[thickness]
     xyi = np.log10(tau.value) + 9, np.log10(M.value)
     logT = griddata((GRID['logtau'], GRID['logM']), GRID['logT'], xyi)
-    return 10**logT << default_units['Teff']
+    return 10**logT
 
 #######################################
 # luminosity conversions
