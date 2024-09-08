@@ -87,8 +87,7 @@ def logg_from_M_R(M, R):
     """
     Input mass and radius to get the WD logg.
     """
-    g = G*M/R**2
-    return g
+    return G*M/R**2
 
 @units_handling(x_kind='logg', y_kind='Radius', z_kind='Mass')
 def M_from_logg_R(logg, R):
@@ -96,8 +95,7 @@ def M_from_logg_R(logg, R):
     Input logg and radius to get the WD mass.
     """
     g = logg.physical
-    M = g*R**2/G
-    return M
+    return g*R**2/G
 
 @units_handling(x_kind='Mass', y_kind='logg', z_kind='Radius')
 def R_from_M_logg(M, logg):
@@ -105,8 +103,7 @@ def R_from_M_logg(M, logg):
     Input mass and logg to get the WD radius.
     """
     g = logg.physical
-    R = np.sqrt(G*M/g)
-    return R
+    return np.sqrt(G*M/g)
 
 #######################################
 # M, R, logg, Teff conversions
@@ -223,8 +220,7 @@ def L_from_Teff_R(Teff, R):
     """
     Input Teff and radius to get the WD luminosity.
     """
-    L = 4*np.pi * sigma_sb * R**2 * Teff**4
-    return L
+    return 4*np.pi * sigma_sb * R**2 * Teff**4
 
 @units_handling(x_kind='Teff', y_kind='logg', z_kind='Luminosity')
 def L_from_Teff_logg(Teff, logg, thickness):
@@ -284,10 +280,9 @@ def Teff_from_R_L(R, L):
 @units_handling(x_kind='Mass', y_kind='Radius', z_kind='velocity')
 def Grv_from_M_R(M, R):
     """
-    Input mass and radius to get the WD Grv.
+    Input mass and radius to get the gravitational redshift.
     """
-    rv = G*M/(c*R)
-    return rv
+    return G*M/(c*R)
 
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
