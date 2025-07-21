@@ -1,12 +1,3 @@
-"""
-Utilities for interpolating white dwarf Mass-Radius relations
-and evolutionary models. The default models are from
-Bedard et al. (2020) (adsabs.harvard.edu/abs/2020ApJ...901...93B)
-using the CO_Hthick (mH=1e-4) and CO_Hthin (mH=1e-10) model grids.
-
-Generic routines are also provided for simple conversions,
-e.g. radius from mass and logg, luminosity from Teff and radius.
-"""
 import os.path
 from functools import wraps
 import numpy as np
@@ -74,7 +65,8 @@ def units_handling(x_kind, y_kind, z_kind):
             has_x_unit, has_y_unit = hasattr(x, 'unit'), hasattr(y, 'unit')
             x = x.to(x_unit) if has_x_unit else x << x_unit
             y = y.to(y_unit) if has_y_unit else y << y_unit
-            z = func(x, y, *args, **kwargs).to(z_unit)
+            z = func(x, y, *args, **kwargs)
+            z = z.to(z_unit) if hasattr(z, 'unit') else z << z_unit
             return z if has_x_unit or has_y_unit else z.value
         return _wrapper
     return _decorator
@@ -85,31 +77,28 @@ def units_handling(x_kind, y_kind, z_kind):
 @units_handling(x_kind='Mass', y_kind='Radius', z_kind='logg')
 def logg_from_M_R(M, R):
     """
-    Input mass and radius to get the WD logg.
+    Input mass and radius to get the logg.
     """
-    g = G*M/R**2
-    return g
+    return G*M/R**2
 
 @units_handling(x_kind='logg', y_kind='Radius', z_kind='Mass')
 def M_from_logg_R(logg, R):
     """
-    Input logg and radius to get the WD mass.
+    Input logg and radius to get the mass.
     """
     g = logg.physical
-    M = g*R**2/G
-    return M
+    return g*R**2/G
 
 @units_handling(x_kind='Mass', y_kind='logg', z_kind='Radius')
 def R_from_M_logg(M, logg):
     """
-    Input mass and logg to get the WD radius.
+    Input mass and logg to get the radius.
     """
     g = logg.physical
-    R = np.sqrt(G*M/g)
-    return R
+    return np.sqrt(G*M/g)
 
 #######################################
-# M, R, logg, Teff conversions
+# Teff conversions
 
 @units_handling(x_kind='Teff', y_kind='Radius', z_kind='logg')
 def logg_from_Teff_R(Teff, R, thickness):
@@ -119,17 +108,7 @@ def logg_from_Teff_R(Teff, R, thickness):
     """
     GRID = GRIDS[thickness]
     xyi = np.log10(Teff.value), np.log10(R.value)
-    logg = griddata((GRID['logT'], GRID['logR']), GRID['logg'], xyi)
-    return logg << default_units['logg']
-
-@units_handling(x_kind='Teff', y_kind='Radius', z_kind='Mass')
-def M_from_Teff_R(Teff, R, thickness):
-    """
-    Input Teff and radius to get the WD mass.
-    Thickness should be one of 'thin'/'thick'.
-    """
-    logg = logg_from_Teff_R(Teff, R, thickness)
-    return M_from_logg_R(logg, R)
+    return griddata((GRID['logT'], GRID['logR']), GRID['logg'], xyi)
 
 @units_handling(x_kind='Teff', y_kind='logg', z_kind='Radius')
 def R_from_Teff_logg(Teff, logg, thickness):
@@ -140,7 +119,7 @@ def R_from_Teff_logg(Teff, logg, thickness):
     GRID = GRIDS[thickness]
     xyi = np.log10(Teff.value), logg.value
     logR = griddata((GRID['logT'], GRID['logg']), GRID['logR'], xyi)
-    return 10**logR << default_units['Radius']
+    return 10**logR
 
 @units_handling(x_kind='Teff', y_kind='logg', z_kind='Mass')
 def M_from_Teff_logg(Teff, logg, thickness):
@@ -159,8 +138,16 @@ def logg_from_Teff_M(Teff, M, thickness):
     """
     GRID = GRIDS[thickness]
     xyi = np.log10(Teff.value), np.log10(M.value)
-    logg = griddata((GRID['logT'], GRID['logM']), GRID['logg'], xyi)
-    return logg << default_units['logg']
+    return griddata((GRID['logT'], GRID['logM']), GRID['logg'], xyi)
+
+@units_handling(x_kind='Teff', y_kind='Radius', z_kind='Mass')
+def M_from_Teff_R(Teff, R, thickness):
+    """
+    Input Teff and radius to get the WD mass.
+    Thickness should be one of 'thin'/'thick'.
+    """
+    logg = logg_from_Teff_R(Teff, R, thickness)
+    return M_from_logg_R(logg, R)
 
 @units_handling(x_kind='Teff', y_kind='Mass', z_kind='Radius')
 def R_from_Teff_M(Teff, M, thickness):
@@ -177,13 +164,13 @@ def R_from_Teff_M(Teff, M, thickness):
 @units_handling(x_kind='Teff', y_kind='Radius', z_kind='tau_cool')
 def tau_from_Teff_R(Teff, R, thickness):
     """
-    Input Teff and radius to get the WD cooling age (Gyr).
+    Input Teff and radius to get the WD cooling age.
     Thickness should be one of 'thin'/'thick'.
     """
     GRID = GRIDS[thickness]
     xyi = np.log10(Teff.value), np.log10(R.value)
     logtau = griddata((GRID['logT'], GRID['logR']), GRID['logtau'], xyi)
-    return 10**(logtau-9) << default_units['tau_cool']
+    return 10**(logtau-9)
 
 @units_handling(x_kind='Teff', y_kind='logg', z_kind='tau_cool')
 def tau_from_Teff_logg(Teff, logg, thickness):
@@ -213,7 +200,7 @@ def Teff_from_tau_M(tau, M, thickness):
     GRID = GRIDS[thickness]
     xyi = np.log10(tau.value) + 9, np.log10(M.value)
     logT = griddata((GRID['logtau'], GRID['logM']), GRID['logT'], xyi)
-    return 10**logT << default_units['Teff']
+    return 10**logT
 
 #######################################
 # luminosity conversions
@@ -221,10 +208,25 @@ def Teff_from_tau_M(tau, M, thickness):
 @units_handling(x_kind='Teff', y_kind='Radius', z_kind='Luminosity')
 def L_from_Teff_R(Teff, R):
     """
-    Input Teff and radius to get the WD luminosity.
+    Input Teff and radius to get the luminosity.
     """
-    L = 4*np.pi * sigma_sb * R**2 * Teff**4
-    return L
+    return 4*np.pi * sigma_sb * R**2 * Teff**4
+
+@units_handling(x_kind='Teff', y_kind='Luminosity', z_kind='Radius')
+def R_from_Teff_L(Teff, L):
+    """
+    Input Teff and luminosity to get the radius.
+    """
+    R2 = L / (4*np.pi * sigma_sb * Teff**4)
+    return np.sqrt(R2)
+
+@units_handling(x_kind='Radius', y_kind='Luminosity', z_kind='Teff')
+def Teff_from_R_L(R, L):
+    """
+    Input R and luminosity to get the Teff.
+    """
+    T4 = L / (4*np.pi * sigma_sb * R**2)
+    return T4**(1/4)
 
 @units_handling(x_kind='Teff', y_kind='logg', z_kind='Luminosity')
 def L_from_Teff_logg(Teff, logg, thickness):
@@ -235,6 +237,15 @@ def L_from_Teff_logg(Teff, logg, thickness):
     R = R_from_Teff_logg(Teff, logg, thickness)
     return L_from_Teff_R(Teff, R)
 
+@units_handling(x_kind='Teff', y_kind='Luminosity', z_kind='logg')
+def logg_from_Teff_L(Teff, L, thickness):
+    """
+    Input Teff and luminosity to get the WD logg.
+    Thickness should be one of 'thin'/'thick'.
+    """
+    R = R_from_Teff_L(Teff, L)
+    return logg_from_Teff_R(Teff, R, thickness)
+
 @units_handling(x_kind='Teff', y_kind='Mass', z_kind='Luminosity')
 def L_from_Teff_M(Teff, M, thickness):
     """
@@ -243,23 +254,6 @@ def L_from_Teff_M(Teff, M, thickness):
     """
     R = R_from_Teff_M(Teff, M, thickness)
     return L_from_Teff_R(Teff, R)
-
-@units_handling(x_kind='Teff', y_kind='Luminosity', z_kind='Radius')
-def R_from_Teff_L(Teff, L):
-    """
-    Input Teff and luminosity to get the WD radius.
-    """
-    R2 = L / (4*np.pi * sigma_sb * Teff**4)
-    return np.sqrt(R2)
-
-@units_handling(x_kind='Teff', y_kind='Luminosity', z_kind='logg')
-def logg_from_Teff_L(Teff, L, thickness):
-    """
-    Input Teff (K) and luminosity (Lsun) to get the WD logg (cm s-2 dex).
-    Thickness should be one of 'thin'/'thick'.
-    """
-    R = R_from_Teff_L(Teff, L)
-    return logg_from_Teff_R(Teff, R, thickness)
 
 @units_handling(x_kind='Teff', y_kind='Luminosity', z_kind='Mass')
 def M_from_Teff_L(Teff, L, thickness):
@@ -270,24 +264,15 @@ def M_from_Teff_L(Teff, L, thickness):
     R = R_from_Teff_L(Teff, L)
     return M_from_Teff_R(Teff, R, thickness)
 
-@units_handling(x_kind='Radius', y_kind='Luminosity', z_kind='Teff')
-def Teff_from_R_L(R, L):
-    """
-    Input R and luminosity to get the WD Teff.
-    """
-    T4 = L / (4*np.pi * sigma_sb * R**2)
-    return T4**(1/4)
-
 #######################################
 # gravitational redshift
 
 @units_handling(x_kind='Mass', y_kind='Radius', z_kind='velocity')
 def Grv_from_M_R(M, R):
     """
-    Input mass and radius to get the WD Grv.
+    Input mass and radius to get the gravitational redshift.
     """
-    rv = G*M/(c*R)
-    return rv
+    return G*M/(c*R)
 
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
