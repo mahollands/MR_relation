@@ -64,11 +64,11 @@ def units_handling(x_kind, y_kind, z_kind):
     def _decorator(func):
         @wraps(func)
         def _wrapper(x, y, *args, **kwargs):
-            has_x_unit, has_y_unit = hasattr(x, 'unit'), hasattr(y, 'unit')
+            has_x_unit, has_y_unit = isinstance(x, u.Quantity), isinstance(y, u.Quantity)
             x = x.to(x_unit) if has_x_unit else x << x_unit
             y = y.to(y_unit) if has_y_unit else y << y_unit
             z = func(x, y, *args, **kwargs)
-            z = z.to(z_unit) if hasattr(z, 'unit') else z << z_unit
+            z = z.to(z_unit) if isinstance(z, u.Quantity) else z << z_unit
             return z if has_x_unit or has_y_unit else z.value
         return _wrapper
     return _decorator
