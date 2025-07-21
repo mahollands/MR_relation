@@ -28,6 +28,8 @@ __all__ = [
     "M_from_Teff_L",
     "Teff_from_R_L",
     "Grv_from_M_R",
+    "R_from_Grv_M",
+    "M_from_Grv_R",
 ]
 
 default_units = {
@@ -35,9 +37,9 @@ default_units = {
     'Radius' : u.Rsun,
     'logg': u.dex(u.cm/u.s**2),
     'Teff' : u.K,
-    'tau_cool' : u.Gyr,
+    'Age' : u.Gyr,
     'Luminosity' : u.Lsun,
-    'velocity' : u.km/u.s,
+    'Velocity' : u.km/u.s,
 }
 
 def set_models(models):
@@ -161,7 +163,7 @@ def R_from_Teff_M(Teff, M, thickness):
 #######################################
 # cooling age conversions
 
-@units_handling(x_kind='Teff', y_kind='Radius', z_kind='tau_cool')
+@units_handling(x_kind='Teff', y_kind='Radius', z_kind='Age')
 def tau_from_Teff_R(Teff, R, thickness):
     """
     Input Teff and radius to get the WD cooling age.
@@ -172,7 +174,7 @@ def tau_from_Teff_R(Teff, R, thickness):
     logtau = griddata((GRID['logT'], GRID['logR']), GRID['logtau'], xyi)
     return 10**(logtau-9)
 
-@units_handling(x_kind='Teff', y_kind='logg', z_kind='tau_cool')
+@units_handling(x_kind='Teff', y_kind='logg', z_kind='Age')
 def tau_from_Teff_logg(Teff, logg, thickness):
     """
     Input Teff and logg to get the WD cooling age.
@@ -181,7 +183,7 @@ def tau_from_Teff_logg(Teff, logg, thickness):
     R = R_from_Teff_logg(Teff, logg, thickness)
     return tau_from_Teff_R(Teff, R, thickness)
 
-@units_handling(x_kind='Teff', y_kind='Mass', z_kind='tau_cool')
+@units_handling(x_kind='Teff', y_kind='Mass', z_kind='Age')
 def tau_from_Teff_M(Teff, M, thickness):
     """
     Input Teff  and mass to get the WD cooling age.
@@ -190,7 +192,7 @@ def tau_from_Teff_M(Teff, M, thickness):
     R = R_from_Teff_M(Teff, M, thickness)
     return tau_from_Teff_R(Teff, R, thickness)
 
-@units_handling(x_kind='tau_cool', y_kind='Mass', z_kind='Teff')
+@units_handling(x_kind='Age', y_kind='Mass', z_kind='Teff')
 def Teff_from_tau_M(tau, M, thickness):
     """
     Input tau and mass to get the Teff.
@@ -267,12 +269,29 @@ def M_from_Teff_L(Teff, L, thickness):
 #######################################
 # gravitational redshift
 
-@units_handling(x_kind='Mass', y_kind='Radius', z_kind='velocity')
+@units_handling(x_kind='Mass', y_kind='Radius', z_kind='Velocity')
 def Grv_from_M_R(M, R):
     """
     Input mass and radius to get the gravitational redshift.
     """
     return G*M/(c*R)
+
+@units_handling(x_kind='Velocity', y_kind='Mass', z_kind='Radius')
+def R_from_Grv_M(Grv, M):
+    """
+    Input gravitational redshift and mass to get the radius.
+    """
+    return G*M/(c*Grv)
+
+@units_handling(x_kind='Velocity', y_kind='Radius', z_kind='Mass')
+def M_from_Grv_R(Grv, R):
+    """
+    Input gravitational redshift and radius to get the mass.
+    """
+    return c*Grv*R/G
+
+#######################################
+# Testing
 
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
