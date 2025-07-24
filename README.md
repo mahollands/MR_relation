@@ -43,11 +43,12 @@ from 1D models, or the inverse.
 >>> M_from_logg_R(9.81*u.m/u.s**2, 0*u.dex(u.Rearth)).to(u.Mearth)
 <Quantity 1.00118406 earthMass>
 
-#Switching to a different grid (see references below)
->>> tau_from_Teff_M(10000*u.K, 0.6*u.Msun, 'thick')
+#Switching to a different grid (see references below for options)
+>>> import MR_relation as MR
+>>> M.tau_from_Teff_M(10000*u.K, 0.6*u.Msun, 'thick')
 <Quantity 0.6328035 Gyr>
->>> MR_relation.CHOSEN_GRID = 'Fontaine01'
->>> tau_from_Teff_M(10000*u.K, 0.6*u.Msun, 'thick')
+>>> MR.set_grid('Fontaine01')
+>>> MR.tau_from_Teff_M(10000*u.K, 0.6*u.Msun, 'thick')
 <Quantity 0.60274991 Gyr>
 ```
 
