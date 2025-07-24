@@ -67,6 +67,7 @@ def set_grid(grid_name):
         'Bedard20',
         'Fontaine01',
         'Camisassa25',
+        'Althaus13ELM',
     }
     if grid_name not in valid_grids:
         raise ValueError(f"grid_name should be one of {valid_grids}")
@@ -350,7 +351,7 @@ def M_from_Grv_R(Grv, R):
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
 
-    grid = get_grid(GRID_NAME, thickness)
+    grid = get_grid(GRID_NAME, 'thick')
     logg, logR = [np.array(grid[x]) for x in ("logg", "logR")]
     M2 = M_from_logg_R(logg, 10**logR)
     for T in np.unique(np.array(grid["logT"])):

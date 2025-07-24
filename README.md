@@ -62,3 +62,6 @@ from 1D models, or the inverse.
 * `Bedard20`: [A. Bedard et al, ApJ 901, 26 (2020)](https://ui.adsabs.harvard.edu/abs/2020ApJ...901...93B/abstract)
 * `Fontaine01`: [G. Fontaine et al, PASP 113, 409 (2001)](https://ui.adsabs.harvard.edu/abs/2001PASP..113..409F/abstract)
 * `Camisassa25`: [M. Camisassa, Astronomische Nachrichten 346, e20240118 (2025)](https://ui.adsabs.harvard.edu/abs/2025AN....34640118C/abstract)
+* `Althaus13ELM`: [L. Althaus et al, A&A 557 19 (2013)](https://ui.adsabs.harvard.edu/abs/2013A%26A...557A..19A/abstract)
+
+NB: Only the monotonic cooling part of the Althaus ELM models are used so that all interpolation functions will work correctly.
