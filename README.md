@@ -1,14 +1,23 @@
 # MR relation
 
-Module for interpolating the Bedard 2020 grid of evolutionary models to use as
-a mass radius relation. For example calculating radius from a known Teff and
-logg. There are other routines included for calculting gravitational redshifts,
-and simple conversions between M, R, and logg. 
+Module for interpolating white dwarf evolutionary models. For example
+calculating the white dwarf radius from a known Teff and logg, or the white
+dwarf cooling age from mass and radius.
+
+By default the evolutionary models of Bedard et al. (2020) are used. Other
+model grids are included (see references) with more to be added over time. Let
+me know if you feel your evolutionary model grid should be included!
+
+Generic routines are also included for calculting gravitational redshifts, and
+conversions between M/R/logg or L/R/Teff.
 
 This module is compatible with astropy units. If arguments are provided without
 units, sensible defaults are assumed, e.g. Msun for mass, and the result is also
 returned without units. If either of the two interpolating arguments are input
 with units, the output is also returned with a unit attached.
+
+A sub-module `correct_3D` is included for applying 3D corrections to parameters
+from 1D models, or the inverse.
 
 ## Examples:
 ```python
@@ -33,10 +42,21 @@ with units, the output is also returned with a unit attached.
 <Quantity 0.57800603 solMass>
 >>> M_from_logg_R(9.81*u.m/u.s**2, 0*u.dex(u.Rearth)).to(u.Mearth)
 <Quantity 1.00118406 earthMass>
+
+#Switching to a different grid (see references below)
+>>> tau_from_Teff_M(10000*u.K, 0.6*u.Msun, 'thick')
+<Quantity 0.6328035 Gyr>
+>>> MR_relation.CHOSEN_GRID = 'Fontaine01'
+>>> tau_from_Teff_M(10000*u.K, 0.6*u.Msun, 'thick')
+<Quantity 0.60274991 Gyr>
 ```
 
-# Dependencies:
+## Dependencies:
 * numpy
 * scipy
 * astropy
 * pandas
+
+## References:
+* `Bedard20`: [Bedard et al, ApJ 901, 26 (2020)](https://ui.adsabs.harvard.edu/abs/2020ApJ...901...93B/abstract)
+* `Fontaine01`: [Fontaine et al, PASP 113, 409 (2001)](https://ui.adsabs.harvard.edu/abs/2001PASP..113..409F/abstract)
