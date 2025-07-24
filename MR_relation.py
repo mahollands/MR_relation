@@ -1,5 +1,5 @@
 import os.path
-from functools import wraps
+import functools
 import numpy as np
 import pandas as pd
 from scipy.interpolate import griddata
@@ -32,6 +32,9 @@ __all__ = [
     "M_from_Grv_R",
 ]
 
+CHOSEN_GRID = "Bedard20"
+MR_DIR = os.path.dirname(os.path.abspath(__file__))
+
 default_units = {
     "Mass": u.Msun,
     "Radius": u.Rsun,
@@ -43,18 +46,12 @@ default_units = {
 }
 
 
-def set_models(models):
-    t_opt = "thin", "thick"
-    mr_dir = os.path.dirname(os.path.abspath(__file__))
-    f_grids = {t: f"{mr_dir}/MR_grids/{models}_{t}.csv" for t in t_opt}
-    GRIDS = {t: pd.read_csv(f_grids[t]) for t in t_opt}
-    for t in t_opt:
-        GRID = GRIDS[t]
-        GRID["logM"] = np.log10(GRID["Mass"])
-    return GRIDS
-
-
-GRIDS = set_models("Bedard20")
+@functools.cache
+def get_grid(grid_name, thickness):
+    f_grid = f"{MR_DIR}/MR_grids/{grid_name}_{thickness}.csv"
+    grid = pd.read_csv(f_grid)
+    grid["logM"] = np.log10(grid["Mass"])
+    return grid
 
 
 def units_handling(x_kind, y_kind, z_kind):
@@ -67,7 +64,7 @@ def units_handling(x_kind, y_kind, z_kind):
     x_unit, y_unit, z_unit = map(default_units.get, (x_kind, y_kind, z_kind))
 
     def _decorator(func):
-        @wraps(func)
+        @functools.wraps(func)
         def _wrapper(x, y, *args, **kwargs):
             has_x_unit, has_y_unit = isinstance(x, u.Quantity), isinstance(
                 y, u.Quantity
@@ -123,7 +120,7 @@ def logg_from_Teff_R(Teff, R, thickness):
     Input Teff and radius to get the WD logg.
     Thickness should be one of 'thin'/'thick'.
     """
-    GRID = GRIDS[thickness]
+    GRID = get_grid(CHOSEN_GRID, thickness)
     xyi = np.log10(Teff.value), np.log10(R.value)
     return griddata((GRID["logT"], GRID["logR"]), GRID["logg"], xyi)
 
@@ -134,7 +131,7 @@ def R_from_Teff_logg(Teff, logg, thickness):
     Input Teff and logg to get the WD radius.
     Thickness should be one of 'thin'/'thick'.
     """
-    GRID = GRIDS[thickness]
+    GRID = get_grid(CHOSEN_GRID, thickness)
     xyi = np.log10(Teff.value), logg.value
     logR = griddata((GRID["logT"], GRID["logg"]), GRID["logR"], xyi)
     return 10**logR
@@ -156,7 +153,7 @@ def logg_from_Teff_M(Teff, M, thickness):
     Input Teff and mass to get the WD logg.
     Thickness should be one of 'thin'/'thick'.
     """
-    GRID = GRIDS[thickness]
+    GRID = get_grid(CHOSEN_GRID, thickness)
     xyi = np.log10(Teff.value), np.log10(M.value)
     return griddata((GRID["logT"], GRID["logM"]), GRID["logg"], xyi)
 
@@ -191,7 +188,7 @@ def tau_from_Teff_R(Teff, R, thickness):
     Input Teff and radius to get the WD cooling age.
     Thickness should be one of 'thin'/'thick'.
     """
-    GRID = GRIDS[thickness]
+    GRID = get_grid(CHOSEN_GRID, thickness)
     xyi = np.log10(Teff.value), np.log10(R.value)
     logtau = griddata((GRID["logT"], GRID["logR"]), GRID["logtau"], xyi)
     return 10 ** (logtau - 9)
@@ -224,7 +221,7 @@ def Teff_from_tau_M(tau, M, thickness):
     Thickness should be one of 'thin'/'thick'.
     Useful for simulation work.
     """
-    GRID = GRIDS[thickness]
+    GRID = get_grid(CHOSEN_GRID, thickness)
     xyi = np.log10(tau.value) + 9, np.log10(M.value)
     logT = griddata((GRID["logtau"], GRID["logM"]), GRID["logT"], xyi)
     return 10**logT
@@ -334,7 +331,7 @@ def M_from_Grv_R(Grv, R):
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
 
-    GRID = GRIDS["thin"]
+    GRID = get_grid(CHOSEN_GRID, 'thick')
     logg, logR = [np.array(GRID[x]) for x in ("logg", "logR")]
     M2 = M_from_logg_R(logg, 10**logR)
     for T in np.unique(np.array(GRID["logT"])):
