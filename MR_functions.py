@@ -3,7 +3,7 @@ from scipy.interpolate import griddata
 from astropy.constants import G, c, sigma_sb
 from .MR_utils import Grid, units_handling
 
-MR_grid = Grid()
+MR_grid = Grid(grid_name="Bedard20")
 
 #######################################
 # M, R, logg conversions
