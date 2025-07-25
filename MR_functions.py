@@ -248,17 +248,3 @@ def M_from_Grv_R(Grv, R):
     Input gravitational redshift and radius to get the mass.
     """
     return c * Grv * R / G
-
-
-#######################################
-# Testing
-
-if __name__ == "__main__":
-    import matplotlib.pyplot as plt
-
-    grid = MR_grid(thickness)
-    logg, logR = [np.array(grid[x]) for x in ("logg", "logR")]
-    M2 = M_from_logg_R(logg, 10**logR)
-    for T in np.unique(np.array(grid["logT"])):
-        plt.plot(grid["logM"], grid["logR"], "k.", ms=1)
-    plt.show()
