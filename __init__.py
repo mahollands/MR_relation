@@ -22,8 +22,9 @@ Default units:
     * Luminosity: Lsun
     * Gravitational redshift: km/s
 """
+
 __author__ = "Mark Hollands"
 __email__ = "M.Hollands.1@warwick.ac.uk"
 
-from .MR_relation import *
+from .MR_functions import *
 from .correct_3D import *

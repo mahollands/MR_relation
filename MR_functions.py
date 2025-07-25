@@ -1,104 +1,9 @@
-import os.path
-import functools
 import numpy as np
-import pandas as pd
 from scipy.interpolate import griddata
-from astropy import units as u
 from astropy.constants import G, c, sigma_sb
+from .MR_utils import Grid, units_handling
 
-__all__ = [
-    "logg_from_M_R",
-    "M_from_logg_R",
-    "R_from_M_logg",
-    "logg_from_Teff_R",
-    "M_from_Teff_R",
-    "R_from_Teff_logg",
-    "M_from_Teff_logg",
-    "logg_from_Teff_M",
-    "R_from_Teff_M",
-    "tau_from_Teff_R",
-    "tau_from_Teff_logg",
-    "tau_from_Teff_M",
-    "Teff_from_tau_M",
-    "L_from_Teff_R",
-    "L_from_Teff_logg",
-    "L_from_Teff_M",
-    "logg_from_Teff_L",
-    "R_from_Teff_L",
-    "M_from_Teff_L",
-    "Teff_from_R_L",
-    "Grv_from_M_R",
-    "R_from_Grv_M",
-    "M_from_Grv_R",
-    "set_grid",
-]
-
-GRID_NAME = "Bedard20"
-MR_DIR = os.path.dirname(os.path.abspath(__file__))
-
-default_units = {
-    "Mass": u.Msun,
-    "Radius": u.Rsun,
-    "logg": u.dex(u.cm / u.s**2),
-    "Teff": u.K,
-    "Age": u.Gyr,
-    "Luminosity": u.Lsun,
-    "Velocity": u.km / u.s,
-}
-
-
-@functools.cache
-def get_grid(grid_name, thickness):
-    """
-    Load a white dwarf evolutionary model grid. The results are
-    cached for future use.
-    """
-    f_grid = f"{MR_DIR}/MR_grids/{grid_name}_{thickness}.csv"
-    grid = pd.read_csv(f_grid)
-    grid["logM"] = np.log10(grid["Mass"])
-    return grid
-
-
-def set_grid(grid_name):
-    """
-    Set the model grid to use. The default is 'Bedard20'
-    """
-    valid_grids = {
-        'Bedard20',
-        'Fontaine01',
-        'Camisassa25',
-        'Althaus13ELM',
-    }
-    if grid_name not in valid_grids:
-        raise ValueError(f"grid_name should be one of {valid_grids}")
-    globals()['GRID_NAME'] = grid_name
-
-
-def units_handling(x_kind, y_kind, z_kind):
-    """
-    Wraps a routine for interpolating z(x, y). If inputs x or y are astropy
-    quantities then the output z is also an astropy quantity. If x or y are
-    both scalars, then z is returned as a scalar assuming sensible default
-    options for their units.
-    """
-    x_unit, y_unit, z_unit = map(default_units.get, (x_kind, y_kind, z_kind))
-
-    def _decorator(func):
-        @functools.wraps(func)
-        def _wrapper(x, y, *args, **kwargs):
-            has_x_unit, has_y_unit = isinstance(x, u.Quantity), isinstance(
-                y, u.Quantity
-            )
-            x = x.to(x_unit) if has_x_unit else x << x_unit
-            y = y.to(y_unit) if has_y_unit else y << y_unit
-            z = func(x, y, *args, **kwargs)
-            z = z.to(z_unit) if isinstance(z, u.Quantity) else z << z_unit
-            return z if has_x_unit or has_y_unit else z.value
-
-        return _wrapper
-
-    return _decorator
-
+MR_grid = Grid()
 
 #######################################
 # M, R, logg conversions
@@ -140,7 +45,7 @@ def logg_from_Teff_R(Teff, R, thickness):
     Input Teff and radius to get the WD logg.
     Thickness should be one of 'thin'/'thick'.
     """
-    grid = get_grid(GRID_NAME, thickness)
+    grid = MR_grid(thickness)
     xyi = np.log10(Teff.value), np.log10(R.value)
     return griddata((grid["logT"], grid["logR"]), grid["logg"], xyi)
 
@@ -151,7 +56,7 @@ def R_from_Teff_logg(Teff, logg, thickness):
     Input Teff and logg to get the WD radius.
     Thickness should be one of 'thin'/'thick'.
     """
-    grid = get_grid(GRID_NAME, thickness)
+    grid = MR_grid(thickness)
     xyi = np.log10(Teff.value), logg.value
     logR = griddata((grid["logT"], grid["logg"]), grid["logR"], xyi)
     return 10**logR
@@ -173,7 +78,7 @@ def logg_from_Teff_M(Teff, M, thickness):
     Input Teff and mass to get the WD logg.
     Thickness should be one of 'thin'/'thick'.
     """
-    grid = get_grid(GRID_NAME, thickness)
+    grid = MR_grid(thickness)
     xyi = np.log10(Teff.value), np.log10(M.value)
     return griddata((grid["logT"], grid["logM"]), grid["logg"], xyi)
 
@@ -208,7 +113,7 @@ def tau_from_Teff_R(Teff, R, thickness):
     Input Teff and radius to get the WD cooling age.
     Thickness should be one of 'thin'/'thick'.
     """
-    grid = get_grid(GRID_NAME, thickness)
+    grid = MR_grid(thickness)
     xyi = np.log10(Teff.value), np.log10(R.value)
     logtau = griddata((grid["logT"], grid["logR"]), grid["logtau"], xyi)
     return 10 ** (logtau - 9)
@@ -241,7 +146,7 @@ def Teff_from_tau_M(tau, M, thickness):
     Thickness should be one of 'thin'/'thick'.
     Useful for simulation work.
     """
-    grid = get_grid(GRID_NAME, thickness)
+    grid = MR_grid(thickness)
     xyi = np.log10(tau.value) + 9, np.log10(M.value)
     logT = griddata((grid["logtau"], grid["logM"]), grid["logT"], xyi)
     return 10**logT
@@ -351,7 +256,7 @@ def M_from_Grv_R(Grv, R):
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
 
-    grid = get_grid(GRID_NAME, 'thick')
+    grid = MR_grid(thickness)
     logg, logR = [np.array(grid[x]) for x in ("logg", "logR")]
     M2 = M_from_logg_R(logg, 10**logR)
     for T in np.unique(np.array(grid["logT"])):
