@@ -38,7 +38,9 @@ class Grid:
         cached for future use.
         """
         if thickness not in {"thick", "thin"}:
-            raise ValueError
+            raise ValueError("hydrogen thickness must be 'thick'/'thin'")
+        if self._GRID_NAME == 'Althaus13ELM' and thickness == "thin":
+            raise ValueError('Althaus ELM grid only for thick H')
         return self.get_grid(self._GRID_NAME, thickness)
 
     @staticmethod
