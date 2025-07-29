@@ -37,6 +37,8 @@ class Grid:
         Load a white dwarf evolutionary model grid. The results are
         cached for future use.
         """
+        if not isinstance(thickness, str):
+            raise TypeError
         if thickness not in {"thick", "thin"}:
             raise ValueError("hydrogen thickness must be 'thick'/'thin'")
         if self._GRID_NAME == 'Althaus13ELM' and thickness == "thin":

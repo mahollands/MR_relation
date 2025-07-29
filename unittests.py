@@ -15,12 +15,12 @@ class Test_inputs:
                 M_from_Teff_logg(10000, "test", thickness="thick")
 
         def test_input3_type(self):
-            with pytest.raises(ValueError):
+            with pytest.raises(TypeError):
                 M_from_Teff_logg(10000, 8.0, thickness=5)
 
         def test_input3_value(self):
             with pytest.raises(ValueError):
-                M_from_Teff_logg(10000, 8.0, thickness="think")
+                M_from_Teff_logg(10000, 8.0, thickness="wrong")
 
     class Test_floats_vs_array:
         def test_float_float(self):
